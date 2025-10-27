@@ -1,0 +1,30 @@
+# CSV FORMAT - QUICK REFERENCE
+
+## ✅ Header CSV (Copy Paste Langsung)
+```
+nibar,kode_barang,nama_barang,spesifikasi_nama_barang,lokasi,nama_pemakai,status_pemakai,jabatan,nomor_identitas_pemakai,alamat_pemakai,bast_nomor,bast_tanggal,dokumen_nama,dokumen_nomor,dokumen_tanggal,keterangan,no_simda,new,tahun,no_mesin
+```
+
+## 📝 Field yang WAJIB
+- **nama_barang** (kolom 3) - Harus diisi!
+
+## 📅 Format Tanggal
+- Indonesia: `29 Agustus 2024`
+- Standard: `2024-08-29`
+
+## 💡 Tips Cepat
+1. **Angka dengan koma** → Pakai kutip: `"10.020.010,00"`
+2. **Nama dengan koma** → Pakai kutip: `"Dr. SUTRISNO, S.KM"`
+3. **NIK panjang** → Pakai kutip: `"3374010101010001"` atau apostrophe: `'3374010101010001`
+4. **Kolom kosong** → Boleh, tinggalkan kosong dengan koma: `,,,,`
+5. **Barcode** → Tidak perlu, auto-generate oleh sistem
+
+## 🚀 Quick Import
+1. Copy header di atas
+2. Paste di baris pertama Excel
+3. Isi data di baris berikutnya
+4. Save as CSV (UTF-8)
+5. Upload di aplikasi
+
+## 📄 Template
+Lihat: `storage/app/template_import.csv`
