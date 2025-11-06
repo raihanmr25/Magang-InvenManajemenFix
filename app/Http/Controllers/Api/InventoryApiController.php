@@ -5,7 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\BarangPemakaian;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator; // <-- TAMBAHKAN INI
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB; // <-- 1. TAMBAHKAN IMPORT DB
 
 class InventoryApiController extends Controller
 {
@@ -78,12 +79,10 @@ class InventoryApiController extends Controller
                 ], 404);
             }
 
-            // Validasi (opsional namun direkomendasikan)
             $validator = Validator::make($request->all(), [
                 'nama' => 'sometimes|string|max:255',
                 'lokasi' => 'sometimes|string|max:255',
                 'pemakai' => 'sometimes|string|max:255',
-                // Tambahkan validasi lain jika perlu
             ]);
 
             if ($validator->fails()) {
@@ -94,8 +93,6 @@ class InventoryApiController extends Controller
                 ], 422);
             }
 
-            // Update item dengan semua data dari request
-            // Model Anda sudah memiliki $fillable, jadi ini aman
             $item->update($request->all());
 
             return response()->json([
@@ -145,14 +142,12 @@ class InventoryApiController extends Controller
         }
     }
 
-    // --- FUNGSI BARU (CREATE) ---
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
         try {
-            // Validasi data yang masuk
             $validator = Validator::make($request->all(), [
                 'nama' => 'required|string|max:255',
                 'barcode' => 'required|string|max:255|unique:barang_pemakaian',
@@ -160,7 +155,6 @@ class InventoryApiController extends Controller
                 'lokasi' => 'nullable|string',
                 'pemakai' => 'nullable|string',
                 'status' => 'nullable|string',
-                // tambahkan validasi lain sesuai kebutuhan
             ]);
 
             if ($validator->fails()) {
@@ -171,15 +165,13 @@ class InventoryApiController extends Controller
                 ], 422);
             }
 
-            // Buat item baru
-            // Pastikan model BarangPemakaian punya $fillable untuk semua kolom ini
             $item = BarangPemakaian::create($request->all());
 
             return response()->json([
                 'success' => true,
                 'message' => 'Barang baru berhasil ditambahkan!',
                 'data' => $item
-            ], 201); // 201 = Created
+            ], 201);
 
         } catch (\Exception $e) {
             return response()->json([
@@ -189,7 +181,6 @@ class InventoryApiController extends Controller
         }
     }
 
-    // --- FUNGSI BARU (DELETE) ---
     /**
      * Remove the specified resource from storage.
      */
@@ -215,6 +206,44 @@ class InventoryApiController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menghapus: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // --- 2. FUNGSI STATISTIK BARU ---
+    /**
+     * Get inventory statistics for dashboard.
+     */
+    public function getStats()
+    {
+        try {
+            $totalBarang = BarangPemakaian::count();
+            
+            // Hitung barang berdasarkan status
+            $byStatus = BarangPemakaian::select('status', DB::raw('count(*) as total'))
+                ->groupBy('status')
+                ->pluck('total', 'status'); // Hasilnya: ["Baik" => 10, "Rusak Ringan" => 2]
+
+            // Hitung barang berdasarkan lokasi (Top 5)
+            $byLokasi = BarangPemakaian::select('lokasi', DB::raw('count(*) as total'))
+                ->groupBy('lokasi')
+                ->orderBy('total', 'desc')
+                ->take(5)
+                ->pluck('total', 'lokasi');
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'total_barang' => $totalBarang,
+                    'by_status' => $byStatus,
+                    'by_lokasi' => $byLokasi
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil statistik: ' . $e->getMessage()
             ], 500);
         }
     }
