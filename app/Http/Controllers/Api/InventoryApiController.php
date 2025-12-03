@@ -148,24 +148,39 @@ class InventoryApiController extends Controller
     public function store(Request $request)
     {
         try {
+            // 1. Ubah validasi barcode menjadi nullable (opsional)
+            // Hapus 'required' pada barcode
             $validator = Validator::make($request->all(), [
                 'nama' => 'required|string|max:255',
-                'barcode' => 'required|string|max:255|unique:barang_pemakaian',
                 'kode_barang' => 'required|string|max:255',
                 'lokasi' => 'nullable|string',
                 'pemakai' => 'nullable|string',
                 'status' => 'nullable|string',
+                // Barcode tidak wajib dikirim dari HP
             ]);
 
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validasi gagal. Pastikan Barcode unik dan Nama/Kode Barang terisi.',
+                    'message' => 'Validasi gagal.',
                     'errors' => $validator->errors()
                 ], 422);
             }
 
-            $item = BarangPemakaian::create($request->all());
+            // 2. Logika Auto-Generate Barcode (BRG + 9 digit angka)
+            // Ambil barang terakhir untuk tahu urutan ID selanjutnya
+            $lastItem = BarangPemakaian::orderBy('id', 'desc')->first();
+            $nextId = $lastItem ? $lastItem->id + 1 : 1;
+            
+            // Format: BRG000000001
+            $generatedBarcode = 'BRG' . str_pad($nextId, 9, '0', STR_PAD_LEFT);
+
+            // Gabungkan data request dengan barcode baru
+            $data = $request->all();
+            $data['barcode'] = $generatedBarcode;
+
+            // 3. Simpan ke Database
+            $item = BarangPemakaian::create($data);
 
             return response()->json([
                 'success' => true,
