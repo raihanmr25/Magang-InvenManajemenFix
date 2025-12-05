@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use Milon\Barcode\DNS1D;
 use App\Http\Controllers\Controller;
 use App\Models\BarangPemakaian;
 use Illuminate\Http\Request;
@@ -52,15 +53,16 @@ class InventoryApiController extends Controller
                 ], 404);
             }
 
+            // --- TAMBAHAN: Generate Gambar Barcode ---
+            $item = $this->addBarcodeImage($item);
+            // -----------------------------------------
+
             return response()->json([
                 'success' => true,
                 'data' => $item
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
-            ], 500);
+            // ... error handling
         }
     }
 
@@ -181,6 +183,7 @@ class InventoryApiController extends Controller
 
             // 3. Simpan ke Database
             $item = BarangPemakaian::create($data);
+            $item = $this->addBarcodeImage($item);
 
             return response()->json([
                 'success' => true,
@@ -261,5 +264,14 @@ class InventoryApiController extends Controller
                 'message' => 'Gagal mengambil statistik: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    // Helper untuk generate gambar barcode base64
+    private function addBarcodeImage($item)
+    {
+        $d = new DNS1D();
+        // C128 adalah tipe barcode standar yang umum dipakai
+        $item->barcode_image = 'data:image/png;base64,' . $d->getBarcodePNG($item->barcode, 'C128');
+        return $item;
     }
 }
